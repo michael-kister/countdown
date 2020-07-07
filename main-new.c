@@ -58,6 +58,8 @@
 #define N4 16
 #define N5 32
 
+#define __NUM_MASK__ 63
+
 #define ADD 64
 #define SUB 128
 #define MUL 256
@@ -109,14 +111,14 @@ int evaluate(int num_op);
  */
 int main(int argc, char** argv) {
 
-    __numbers__[0] = 1;
-    __numbers__[1] = 232;
-    __numbers__[2] = 3;
-    __numbers__[3] = 44;
+    __numbers__[0] = 75;
+    __numbers__[1] = 50;
+    __numbers__[2] = 7;
+    __numbers__[3] = 6;
     __numbers__[4] = 5;
-    __numbers__[5] = 6;
+    __numbers__[5] = 9;
 
-    __target__ = 100;
+    __target__ = 126;
 
     int i, j, k;
     
@@ -127,7 +129,7 @@ int main(int argc, char** argv) {
     }
         
     // iterate over the number of leaves
-    for (i = 1; i < 3; ++i) {
+    for (i = 1; i < 4; ++i) {
 
 	leaf_recursion(0, i+1, 0);
 	
@@ -136,6 +138,19 @@ int main(int argc, char** argv) {
     return 0;  
   
 }
+
+/********************************************************************/
+/*                         UX FUNCTIONS                             */
+/********************************************************************/
+
+
+
+
+
+
+
+
+
 
 /********************************************************************/
 /*                      SOLUTION FUNCTIONS                          */
@@ -234,14 +249,27 @@ char get_op(int c) {
 
 int print_solution(int n) {
 
+    int i, j, k, ix, iy, i_end = 0;
+
+    int n_shift_x, n_shift_y, n_shift = 4;
+
     int e = evaluate(n);
 
     if (e != __target__)
 	return -1;
-    
-    int i, j, k, ix, iy, i_end = 0;
 
-    int n_shift_x, n_shift_y, n_shift = 4;
+    // do a check to try and eliminate some repeats
+    for (i = 0; i < N-2; ++i) {
+
+	// if you have two totally separate adjacent branches
+	if (0 == (__solution__[i] & __solution__[i+1] & __NUM_MASK__)) {
+
+	    // only continue if the bigger one is first
+	    if ((__solution__[i]&__NUM_MASK__) <
+		(__solution__[i+1]&__NUM_MASK__))
+		return -1;
+	}
+    }
 
     // iterate over the vector of solutions, starting with the last
     for (i = n-1; i >= 0; --i) {
