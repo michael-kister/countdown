@@ -111,14 +111,14 @@ int evaluate(int num_op);
  */
 int main(int argc, char** argv) {
 
-    __numbers__[0] = 75;
-    __numbers__[1] = 50;
+    __numbers__[0] = 50;
+    __numbers__[1] = 100;
     __numbers__[2] = 7;
-    __numbers__[3] = 6;
-    __numbers__[4] = 5;
-    __numbers__[5] = 9;
+    __numbers__[3] = 8;
+    __numbers__[4] = 7;
+    __numbers__[5] = 1;
 
-    __target__ = 126;
+    __target__ = 391;
 
     int i, j, k;
     
@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
     }
         
     // iterate over the number of leaves
-    for (i = 1; i < 4; ++i) {
+    for (i = 1; i < 6; ++i) {
 
 	leaf_recursion(0, i+1, 0);
 	
@@ -159,6 +159,8 @@ int main(int argc, char** argv) {
 int tree_recursion(int i_branch, int num_leaf) {
     
     int i, j, k, l;
+
+    int status;
     
     // loop over the starting branch
     for (i = 0; i < num_leaf-1; ++i) {
@@ -190,32 +192,41 @@ int tree_recursion(int i_branch, int num_leaf) {
 			o_codes[k] + __OP_FLAG__;
 		    
 		    if (i_branch+1 < num_leaf-1) {
-			tree_recursion(i_branch+1, num_leaf);
+			status = tree_recursion(i_branch+1, num_leaf);
 		    } else {
-			print_solution(num_leaf-1);
+			status = print_solution(num_leaf-1);
 		    }
 		    
 		    __solution__[(num_leaf-1)-(i_branch+1)] -= __OP_FLAG__;
+
+		    if (status == 0)
+			break;
 		    
 		    if (i_branch+1 < num_leaf-1) {
-			tree_recursion(i_branch+1, num_leaf);
+			status = tree_recursion(i_branch+1, num_leaf);
 		    } else {
-			print_solution(num_leaf-1);
+			status = print_solution(num_leaf-1);
 		    }
+
+		    if (status == 0)
+			break;
 		}
 
 		// make the leaf available again
 		is_leaf_available[j] = 1;
+
+		if (status == 0)
+		    return 0;
 	    }
 	}
     }
-    return 0;
+    return 1;
 }
 
 int leaf_recursion(int i_leaf, int max_leaf, int i_start) {
 
     int i;
-
+    
     // loop over which is the i_leaf'th variable to use
     for (i = i_start; i < N - max_leaf + i_leaf + 1; ++i) {
 
@@ -352,7 +363,7 @@ int print_solution(int n) {
     }
     
     // display the formula
-    printf("%s = %d\n", formula, e);
+    printf("%d = %s\n", e, formula);
 
     // empty out the buffer
     memset(formula, 0, BUFFER_SIZE);
