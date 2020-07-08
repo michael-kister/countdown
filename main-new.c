@@ -86,20 +86,63 @@ int __numbers__[N];
 int __workspace__[N];
 int __target__;
 int __solution__[N];
-
 int __lvars__[N];
 int __rvars__[N];
-
-
 int location[N];
 #define BUFFER_SIZE 64
 char formula[BUFFER_SIZE];
 
+// prototypes for setting the numbers
+int set_numbers(void);
+
+char choices[32];
+
+int ask_user(int *n_large, int *n_small) {
+
+    int num_large, num_small, num_wrong, i;
+    
+    printf("What would you like? (Choose 6 of [b/l])\n");
+    scanf("%s", choices);
+  
+    for (i = 0; i < N; ++i) {
+	if (choices[i] == 'b' || choices[i] == 'B') {
+	    ++num_large;
+	} else if (choices[i] == 's' || choices[i] == 'S') {
+	    ++num_small;
+	} else {
+	    ++num_wrong;
+	}
+    }
+
+    if (num_wrong > 0) {
+	printf("I told you to choose between 'b' and 's'.\n");
+	printf("You're getting %d extra big numbers!\n", num_wrong);
+	num_large += num_wrong;
+    }
+
+    if (num_large > 4) {
+	printf("You can only have 4 big ones---so that is what you'll have.\n");
+	num_large = 4;
+	num_small = 2;
+    }
+
+    printf("You've chosen %d big numbers, and %d small numbers.\n",
+	   num_large, num_small);
+    printf("Your numbers are:\n");
+
+    return 0;
+
+}
+
+int set_numbers(void) {
+
+    return 0;
+}
+
 // prototypes for solution
 int print_solution(int n);
 char get_op(int c);
-int do_op(int c);
-int do_op2(int c, int ii);
+int do_op(int c, int ii);
 int which_vars(int c, int *i, int *j);
 int which_leaves[N];
 int is_leaf_available[N];
@@ -109,6 +152,11 @@ int evaluate(int num_op);
 
 
 
+int large_ones[4]  = {25, 50, 75, 100};
+int small_ones[20] = {1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10};
+
+int i_large[6];
+int i_small[6];
 
 
 /**
@@ -126,20 +174,173 @@ int main(int argc, char** argv) {
 
     __target__ = 391;
 
-    int i;
+    int i, j;
     
     for (i = 0; i < N; ++i) {
 	is_leaf_available[i] = 1;
 	__workspace__[i] = __numbers__[i];
 	location[i] = 0;
     }
-        
-    // iterate over the number of leaves
-    for (i = 1; i < 6; ++i) {
 
-	leaf_recursion(0, i+1, 0);
-	
+    srand(time(0));
+
+    int which;
+    int num_large = 3;
+    int num_small = 3;
+
+    // to select, you want to get
+
+    for (i = 0; i < num_large; ++i) {
+	which = rand() % (4 - i);
+	__numbers__[i] = large_ones[which];
+	for (j = which; j < (4 - i); ++j) {
+	    large_ones[j] = large_ones[j+1];
+	}
     }
+
+    for (i = 0; i < num_small; ++i) {
+	which = rand() % (20 - i);
+	__numbers__[i+num_large] = small_ones[which];
+	for (j = which; j < (20 - i); ++j) {
+	    small_ones[j] = small_ones[j+1];
+	}
+    }
+
+    __numbers__[0] = 50;
+    __numbers__[1] = 100;
+    __numbers__[2] = 25;
+    __numbers__[3] = 1;
+    __numbers__[4] = 1;
+    __numbers__[5] = 10;
+
+    printf("\n");
+    for (i = 0; i < N; ++i)
+	printf("%4d  ", __numbers__[i]);
+    printf("\n\n");
+
+    
+
+
+
+    
+  
+    /*
+    // pick from large numbers without replacement
+    for (i = 0; i < num_large; ++i) {
+	// start out fresh
+	picked = 0;
+	// if we haven't picked, then pick it
+	while (picked == 0) {
+	    // choose from {0,1,2,3}
+	    i_big[i] = rand() % 4;
+	    // make the claim that we've picked the number
+	    picked = 1;
+	    // check whether we already picked that number (unless it's the first one)
+	    if (i > 0) {
+		// cycle through existing indices
+		for (j = 0; j < i; ++j) {
+		    // if we've already done it, then we haven't actually picked it
+		    if (i_big[i] == i_big[j]) {
+			// undo the assertion that we've picked this one
+			i_big[i] = 100;
+			picked = 0;
+			break;
+		    } // checking for same number
+		} // loop of checking
+	    } // if we're not on first number
+	} // attempt at picking a number
+	numbers[i] = big_ones[i_big[i]];
+	printf("%3d ", numbers[i]);
+	fflush(stdout);
+	sleep(1);
+    } // loop over how many we need
+
+    // picking the small numbers
+    for (i = 0; i < num_small; ++i) {
+	picked = 0;
+	while (picked == 0) {
+	    i_sml[i] = rand() % 20;
+	    picked = 1;
+	    if (i > 0) {
+		for (j = 0; j < i; ++j) {
+		    if (i_sml[i] == i_sml[j]) {
+			picked = 0;
+		    } // checking for same number
+		} // loop of checking
+	    } // if we're not on first number
+	} // attempt at picking a number
+	numbers[num_large+i] = sml_ones[i_sml[i]];
+	printf("%3d ", numbers[num_large+i]);
+	fflush(stdout);
+	sleep(1);
+    } // loop over how many we need
+  
+    printf("\n");
+
+ 
+    printf("\nAnd your target is:\n\t   ");
+    for (i = 0; i < 20; ++i) {
+	hhh = rand() % 9 + 1;
+	ttt = rand() % 10;
+	ooo = rand() % 10;
+	target = 100*hhh + 10*ttt + 1*ooo;
+	printf("\b\b\b%3d", target);
+	fflush(stdout);
+	usleep(100000);
+    }
+    printf("\n\n");
+
+    //timer = 5;
+    // this is stuff for the timer bar
+    printf("[");
+    for (i = 0; i < timer; ++i)
+	printf(" ");
+    printf("]");
+    fflush(stdout);
+    for (i = 0; i < timer; ++i) {
+	sleep(1);
+	for (j = 0; j < timer-i+1; ++j)
+	    printf("\b");
+	printf("=");
+	for (j = 0; j < timer-i-1; ++j)
+	    printf(" ");
+	printf("]");
+	fflush(stdout);
+    }
+    printf("\n\n");
+    sleep(1);
+
+    // you're going to get the answers either way...
+    printf("Ready to see some answers? [y/n]\n");
+    scanf("%s", choices);
+
+    */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    for (i = 1; i < 6; ++i) {
+	leaf_recursion(0, i+1, 0);
+    }
+
+
+
+
+
+    
     
     return 0;  
   
@@ -212,7 +413,7 @@ int tree_recursion(int i_branch, int num_leaf) {
 		    
 		      __solution__[(num_leaf-1)-(i_branch+1)] -= __OP_FLAG__;
 
-		    } else {
+		      } else {
 		    
 		      if (i_branch+1 < num_leaf-1) {
 			status = tree_recursion(i_branch+1, num_leaf);
@@ -220,7 +421,7 @@ int tree_recursion(int i_branch, int num_leaf) {
 			status = print_solution(num_leaf-1);
 		      }
 		      
-		    }
+		      }
 
 		    if (status == 0)
 			break;
@@ -397,11 +598,12 @@ int evaluate(int num_op) {
     int i, out;
     for (i = 0; i < num_op; ++i) {
       //out = do_op(__solution__[i]);
-        out = do_op2(__solution__[i], i);
+        out = do_op(__solution__[i], i);
 	if (out < 0)
 	    break;
     }
 
+    
     __workspace__[0] = __numbers__[0];
     __workspace__[1] = __numbers__[1];
     __workspace__[2] = __numbers__[2];
@@ -416,60 +618,12 @@ int evaluate(int num_op) {
 
 #define _X_ __workspace__[i]
 #define _Y_ __workspace__[j]
-int do_op(int c) {
-
-    int i, j;
-    
-    which_vars(c, &i, &j);
-
-    // see if we want to do _X_ = _Y_ @ _X_, where _Y_ > _X_
-    if (c & __OP_FLAG__) {
-	
-	// if we're doing the reverse order, make sure
-	// that the right operand is bigger
-	if (_X_ >= _Y_ || _X_ == 0)
-	    return -1;
-
-	switch(c & __OP_MASK__) {
-	case ADD: _X_ += _Y_;       break;
-	case SUB: _X_  = _Y_ - _X_; break;
-	case MUL:
-	    if (_X_ == 1 || _Y_ == 1) { return -1;
-	    } else { _X_ *= _Y_; break; }
-	case DIV:
-	    if (_X_ == 1 || _Y_ == 1 || _Y_ % _X_) { return -1;
-	    } else { _X_  = _Y_ / _X_; break; }
-	}
-	
-    } else {
-	
-	// if forward, make sure left operand is bigger
-	if (_X_ <  _Y_ || _Y_ == 0)
-	    return -1;
-	
-	switch(c & __OP_MASK__) {
-	case ADD: _X_ += _Y_; break;
-	case SUB: _X_ -= _Y_; break;
-	case MUL:
-	    if (_X_ == 1 || _Y_ == 1) { return -1;
-	    } else { _X_ *= _Y_; break; }
-	case DIV:
-	    if (_X_ == 1 || _Y_ == 1 || _X_ % _Y_) { return -1;
-	    } else { _X_ /= _X_; break; }
-	}
-    }
-    
-    return _X_;
-}
  
-int do_op2(int c, int ii) {
+int do_op(int c, int ii) {
 
-  //int i, j;
     int i = __lvars__[ii];
     int j = __rvars__[ii];
     
-  //which_vars(c, &i, &j);
-
     // see if we want to do _X_ = _Y_ @ _X_, where _Y_ > _X_
     if (c & __OP_FLAG__) {
 	
