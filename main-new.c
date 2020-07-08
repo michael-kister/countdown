@@ -86,6 +86,11 @@ int __numbers__[N];
 int __workspace__[N];
 int __target__;
 int __solution__[N];
+
+int __lvars__[N];
+int __rvars__[N];
+
+
 int location[N];
 #define BUFFER_SIZE 64
 char formula[BUFFER_SIZE];
@@ -94,6 +99,7 @@ char formula[BUFFER_SIZE];
 int print_solution(int n);
 char get_op(int c);
 int do_op(int c);
+int do_op2(int c, int ii);
 int which_vars(int c, int *i, int *j);
 int which_leaves[N];
 int is_leaf_available[N];
@@ -187,25 +193,33 @@ int tree_recursion(int i_branch, int num_leaf) {
 
 		    // put it in backwards for the printing
 		    __solution__[(num_leaf-1)-i_branch-1] =
-			n_codes[which_leaves[i]] +
+		        n_codes[which_leaves[i]] +
 			n_codes[which_leaves[j]] +
-			o_codes[k] + __OP_FLAG__;
-		    
-		    if (i_branch+1 < num_leaf-1) {
-			status = tree_recursion(i_branch+1, num_leaf);
-		    } else {
-			status = print_solution(num_leaf-1);
-		    }
-		    
-		    __solution__[(num_leaf-1)-(i_branch+1)] -= __OP_FLAG__;
+			o_codes[k];
 
-		    if (status == 0)
-			break;
+		    __lvars__[(num_leaf-1)-i_branch-1] = which_leaves[i];
+		    __rvars__[(num_leaf-1)-i_branch-1] = which_leaves[j];
+
+		    if (__numbers__[which_leaves[i]] < __numbers__[which_leaves[j]]) {
+
+		      __solution__[(num_leaf-1)-i_branch-1] += __OP_FLAG__;
 		    
-		    if (i_branch+1 < num_leaf-1) {
+		      if (i_branch+1 < num_leaf-1) {
 			status = tree_recursion(i_branch+1, num_leaf);
-		    } else {
+		      } else {
 			status = print_solution(num_leaf-1);
+		      }
+		    
+		      __solution__[(num_leaf-1)-(i_branch+1)] -= __OP_FLAG__;
+
+		    } else {
+		    
+		      if (i_branch+1 < num_leaf-1) {
+			status = tree_recursion(i_branch+1, num_leaf);
+		      } else {
+			status = print_solution(num_leaf-1);
+		      }
+		      
 		    }
 
 		    if (status == 0)
@@ -286,7 +300,11 @@ int print_solution(int n) {
     for (i = n-1; i >= 0; --i) {
 
 	// identify which variables you're looking at
-	which_vars(__solution__[i], &ix, &iy);
+	//which_vars(__solution__[i], &ix, &iy);
+
+	ix = __lvars__[i];
+	iy = __rvars__[i];
+	
 	
 	// starting at the end, and going down until you get to the
 	// one who is substituted, shift them all by some number
@@ -378,13 +396,20 @@ int print_solution(int n) {
 int evaluate(int num_op) {
     int i, out;
     for (i = 0; i < num_op; ++i) {
-	out = do_op(__solution__[i]);
+      //out = do_op(__solution__[i]);
+        out = do_op2(__solution__[i], i);
 	if (out < 0)
 	    break;
     }
 
-    for (i = 0; i < N; ++i)
-	__workspace__[i] = __numbers__[i];
+    __workspace__[0] = __numbers__[0];
+    __workspace__[1] = __numbers__[1];
+    __workspace__[2] = __numbers__[2];
+    __workspace__[3] = __numbers__[3];
+    __workspace__[4] = __numbers__[4];
+    __workspace__[5] = __numbers__[5];
+    //    for (i = 0; i < N; ++i)
+    //	__workspace__[i] = __numbers__[i];
 
     return out;
 }
@@ -396,6 +421,54 @@ int do_op(int c) {
     int i, j;
     
     which_vars(c, &i, &j);
+
+    // see if we want to do _X_ = _Y_ @ _X_, where _Y_ > _X_
+    if (c & __OP_FLAG__) {
+	
+	// if we're doing the reverse order, make sure
+	// that the right operand is bigger
+	if (_X_ >= _Y_ || _X_ == 0)
+	    return -1;
+
+	switch(c & __OP_MASK__) {
+	case ADD: _X_ += _Y_;       break;
+	case SUB: _X_  = _Y_ - _X_; break;
+	case MUL:
+	    if (_X_ == 1 || _Y_ == 1) { return -1;
+	    } else { _X_ *= _Y_; break; }
+	case DIV:
+	    if (_X_ == 1 || _Y_ == 1 || _Y_ % _X_) { return -1;
+	    } else { _X_  = _Y_ / _X_; break; }
+	}
+	
+    } else {
+	
+	// if forward, make sure left operand is bigger
+	if (_X_ <  _Y_ || _Y_ == 0)
+	    return -1;
+	
+	switch(c & __OP_MASK__) {
+	case ADD: _X_ += _Y_; break;
+	case SUB: _X_ -= _Y_; break;
+	case MUL:
+	    if (_X_ == 1 || _Y_ == 1) { return -1;
+	    } else { _X_ *= _Y_; break; }
+	case DIV:
+	    if (_X_ == 1 || _Y_ == 1 || _X_ % _Y_) { return -1;
+	    } else { _X_ /= _X_; break; }
+	}
+    }
+    
+    return _X_;
+}
+ 
+int do_op2(int c, int ii) {
+
+  //int i, j;
+    int i = __lvars__[ii];
+    int j = __rvars__[ii];
+    
+  //which_vars(c, &i, &j);
 
     // see if we want to do _X_ = _Y_ @ _X_, where _Y_ > _X_
     if (c & __OP_FLAG__) {
