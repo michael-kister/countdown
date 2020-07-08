@@ -1,7 +1,10 @@
-CC = clang
+CC = gcc
+
+# add -pg for debugging
+CFLAGS = -Wall
 
 countdown : main-new.c
-	CC -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 clean :
 	rm countdown
