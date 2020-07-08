@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
 
     __target__ = 391;
 
-    int i, j, k;
+    int i;
     
     for (i = 0; i < N; ++i) {
 	is_leaf_available[i] = 1;
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
 
 int tree_recursion(int i_branch, int num_leaf) {
     
-    int i, j, k, l;
+  int i, j, k;
 
     int status;
     
@@ -260,9 +260,9 @@ char get_op(int c) {
 
 int print_solution(int n) {
 
-    int i, j, k, ix, iy, i_end = 0;
+    int i, j, ix, iy, i_end = 0;
 
-    int n_shift_x, n_shift_y, n_shift = 4;
+    int n_shift = 4;
 
     int e = evaluate(n);
 
