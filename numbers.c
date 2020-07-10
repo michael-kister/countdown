@@ -66,7 +66,6 @@ void bprint(int m) {
 	   BYTE_TO_BINARY(m>>24), BYTE_TO_BINARY(m>>16), BYTE_TO_BINARY(m>>8), BYTE_TO_BINARY(m));
 }
 
-
 // number of numbers for round
 #define N 6
 
@@ -96,10 +95,6 @@ int digit_count(int n) {
     }
     return count;
 }
-
-int do_op_v(int c, int ii);
-
-
 
 // global variables
 int n_codes[] = {N5, N4, N3, N2, N1, N0};
@@ -197,12 +192,6 @@ int main(int argc, char** argv) {
 
     int i, j;
     
-    for (i = 0; i < N; ++i) {
-	is_leaf_available[i] = 1;
-	__workspace__[i] = __numbers__[i];
-	location[i] = 0;
-    }
-    
     srand(time(0));
 
     int which;
@@ -234,43 +223,18 @@ int main(int argc, char** argv) {
     __numbers__[4] = 1;
     __numbers__[5] = 7;
 
-        /*
-7 - 1 = 6
-75 * 6 = 450
-450 / 50 = 9
-100 * 4 = 400
-400 - 9 = 391  (((75*(1-7))/50))
-
-0     1    2    3   4   5
-
-100   75   50   4   1   7
- |_*___|____|___|   |   |
- 400   |    |       |_-_|    NUM
- |     |____|____*__6
- |    450   |    
- |     |_/__|    
- |_-___9
- |
-     */
     printf("\n");
     for (i = 0; i < N; ++i)
 	printf("%4d  ", __numbers__[i]);
     printf("\n\n");
 
-    __solution__[0] = N0 + N3 + MUL;
-    __solution__[1] = N4 + N5 + SUB + __OP_FLAG__;
-    __solution__[2] = N1 + N4 + MUL;
-    __solution__[3] = N1 + N2 + DIV;
-    __solution__[4] = N0 + N1 + SUB;
+    // save things at the end, to avoid confusion.
+    for (i = 0; i < N; ++i) {
+	is_leaf_available[i] = 1;
+	__workspace__[i] = __numbers__[i];
+	location[i] = 0;
+    }
     
-    __lvars__[0] = 0; __rvars__[0] = 3;
-    __lvars__[1] = 4; __rvars__[1] = 5;
-    __lvars__[2] = 1; __rvars__[2] = 4;
-    __lvars__[3] = 1; __rvars__[3] = 2;
-    __lvars__[4] = 0; __rvars__[4] = 1;
-    
-    //print_solution(5);
-
     for (i = 5; i < 6; ++i) {
     	leaf_recursion(0, i+1, 0);
     }
@@ -584,65 +548,6 @@ int do_op(int c, int ii) {
 	    if (_X_ == 1 || _Y_ == 1) { return -1;
 	    } else { _X_ *= _Y_; break; }
 	case DIV:
-	    if (_X_ == 1 || _Y_ == 1 || _X_ % _Y_) { return -1;
-	    } else { _X_ /= _Y_; break; }
-	}
-    }
-    
-    return _X_;
-}
-int do_op_v(int c, int ii) {
-
-    int i = __lvars__[ii];
-    int j = __rvars__[ii];
-    
-    // see if we want to do _X_ = _Y_ @ _X_, where _Y_ > _X_
-    if (c & __OP_FLAG__) {
-	
-	// if we're doing the reverse order, make sure
-	// that the right operand is bigger
-	if (_X_ >= _Y_ || _X_ == 0) {
-	    printf("You wanted X = Y @ X, where X=%i, Y=%i\n", _X_,_Y_);
-	    return -1;
-	}
-
-	switch(c & __OP_MASK__) {
-	case ADD:
-	    printf("%i != %i + %i\n", _X_+_Y_, _X_, _Y_);
-	    _X_ += _Y_;
-	    break;
-	case SUB:
-	    printf("%i != %i - %i\n", _Y_-_X_, _Y_, _X_);
-	    _X_  = _Y_ - _X_; break;
-	case MUL:
-	    printf("%i != %i * %i\n", _X_*_Y_, _X_, _Y_);
-	    if (_X_ == 1 || _Y_ == 1) { return -1;
-	    } else { _X_ *= _Y_; break; }
-	case DIV:
-	    printf("%i != %i / %i\n", _Y_/_X_, _Y_, _X_);
-	    if (_X_ == 1 || _Y_ == 1 || _Y_ % _X_) { return -1;
-	    } else { _X_  = _Y_ / _X_; break; }
-	}
-	
-    } else {
-	
-	// if forward, make sure left operand is bigger
-	if (_X_ <  _Y_ || _Y_ == 0)
-	    return -1;
-	
-	switch(c & __OP_MASK__) {
-	case ADD:
-	    printf("%i = %i + %i\n", _X_+_Y_, _X_, _Y_);
-	    _X_ += _Y_; break;
-	case SUB:
-	    printf("%i = %i - %i\n", _X_-_Y_, _X_, _Y_);
-	    _X_ -= _Y_; break;
-	case MUL:
-	    printf("%i = %i * %i\n", _X_*_Y_, _X_, _Y_);
-	    if (_X_ == 1 || _Y_ == 1) { return -1;
-	    } else { _X_ *= _Y_; break; }
-	case DIV:
-	    printf("%i = %i / %i\n", _X_/_Y_, _X_, _Y_);
 	    if (_X_ == 1 || _Y_ == 1 || _X_ % _Y_) { return -1;
 	    } else { _X_ /= _Y_; break; }
 	}
