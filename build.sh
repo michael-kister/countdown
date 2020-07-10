@@ -2,4 +2,4 @@
 
 make
 
-./countdown
+./play_numbers

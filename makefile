@@ -1,7 +1,11 @@
 CC = clang
 
-countdown : main-new.c
+#play_letters : letters.c
+#	CC -o $@ $^
+
+
+play_numbers : numbers.c
 	CC -o $@ $^
 
 clean :
-	rm countdown
+	rm play_numbers play_letters
