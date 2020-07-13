@@ -1,46 +1,3 @@
-/*********************************************************************
- * The idea is to store a tree using arrays.
- * Of course, for maximal generality, you would use a struct, with
- * left and right nodes; however, since we know that at most the tree
- * will have six leaves, we can slightly optimize.
- *
- * [a]  [b]  [c]  [d]  [e]  [f]    
- *  |____|    |    |    |    |    (+,a,b) : 00110000
- *  |         |____|____|    |    (-,c,e) : 01001010
- *  |_________|    |         |    (*,a,c) : 10101000
- *  |______________|         |    (/,a,d) : 11100100
- *  |________________________|    (+,a,f) : 00100001
- *  |
- * [y]
- *
- * Note that a char has 8 bits, which is enough to encode one layer of
- * the tree, by uniquely identifying the operator in question, and the
- * two numbers which are undergoing the operation. You can have at
- * most 5 operations, so theoretically, you could encode the whole
- * tree in an array of 5 characters.
- *
- *
- * In terms of solutions, right now I'm iterating over all possible
- * trees, and then checking to see that they're connected, and if they
- * produce a good answer.
- *
- * Perhaps a smarter approach would be to iterate backwards, so that I
- * can be assured that I'm only choosing valid trees.
- * Another benefit of this approach is that if I group the trees by
- * the number of branches, they I may be able to pursue the simplest
- * solutions first, and then increasingly complicated solutions.
- *
- *
- * https://stackoverflow.com/questions/14900693/enumerate-all-full-labeled-binary-tree?noredirect=1&lq=1
- *
- *
- * We iterate over branches by specifying the number of leaves, and
- * then identifying the possible numbers, and then creating all trees
- * of the correct size with those leaves, while always pursuing diff-
- * erent combinations of operations.
- *
- * On one hand, I'd like to eliminate 
- *********************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +6,9 @@
 #include <time.h>
 #include <limits.h>
 #include <string.h>
+
+#include "cecil.h"
+#include "calculator.h"
 
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
 #define BYTE_TO_BINARY(byte)  \
@@ -86,16 +46,6 @@ void bprint(int m) {
 #define __OP_MASK__ 960
 #define __OP_FLAG__ 1024
 
-
-int digit_count(int n) {
-    int count = 0;
-    while (n != 0) {
-        n /= 10;
-        ++count;
-    }
-    return count;
-}
-
 // global variables
 int n_codes[] = {N5, N4, N3, N2, N1, N0};
 int o_codes[] = {ADD, SUB, MUL, DIV};
@@ -106,26 +56,31 @@ int __solution__[N];
 int __lvars__[N];
 int __rvars__[N];
 int location[N];
+
+int __MAX_SOL__ = 10;
+int __NUM_SOL__ = 0;
+
 #define BUFFER_SIZE 64
+
 char formula[BUFFER_SIZE];
+char answer[BUFFER_SIZE];
 
 // prototypes for setting the numbers
 int set_numbers(void);
 
 char choices[32];
 
-int ask_user(int *n_large, int *n_small) {
+int ask_user(int *num_large, int *num_small) {
 
-    int num_large, num_small, num_wrong, i;
-    
-    printf("What would you like? (Choose 6 of [b/l])\n");
+    int i, num_wrong = 0;
+
     scanf("%s", choices);
-  
+    
     for (i = 0; i < N; ++i) {
 	if (choices[i] == 'b' || choices[i] == 'B') {
-	    ++num_large;
+	    ++num_large[0];
 	} else if (choices[i] == 's' || choices[i] == 'S') {
-	    ++num_small;
+	    ++num_small[0];
 	} else {
 	    ++num_wrong;
 	}
@@ -137,23 +92,14 @@ int ask_user(int *n_large, int *n_small) {
 	num_large += num_wrong;
     }
 
-    if (num_large > 4) {
+    if (num_large[0] > 4) {
 	printf("You can only have 4 big ones---so that is what you'll have.\n");
-	num_large = 4;
-	num_small = 2;
+	num_large[0] = 4;
+	num_small[0] = 2;
     }
 
-    printf("You've chosen %d big numbers, and %d small numbers.\n",
-	   num_large, num_small);
-    printf("Your numbers are:\n");
-
     return 0;
 
-}
-
-int set_numbers(void) {
-
-    return 0;
 }
 
 // prototypes for solution
@@ -175,31 +121,35 @@ int small_ones[20] = {1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10};
 int i_large[6];
 int i_small[6];
 
-/**
- * 
- * -------------------------------------------------------------------
- */
-int main(int argc, char** argv) {
 
-    __numbers__[0] = 100;
-    __numbers__[1] = 75;
-    __numbers__[2] = 50;
-    __numbers__[3] = 4;
-    __numbers__[4] = 1;
-    __numbers__[5] = 7;
+void timer(int num_sec) {
 
-    __target__ = 391;
-
-    int i, j;
+    int i,j;
     
-    srand(time(0));
+    printf("[");
+    for (i = 0; i < num_sec; ++i)
+	printf(" ");
+    printf("]");
+    fflush(stdout);
+    for (i = 0; i < num_sec; ++i) {
+	sleep(1);
+	for (j = 0; j < num_sec-i+1; ++j)
+	    printf("\b");
+	printf("=");
+	for (j = 0; j < num_sec-i-1; ++j)
+	    printf(" ");
+	printf("]");
+	fflush(stdout);
+    }
+    printf("\n\n");
+    sleep(1);
+}
 
-    int which;
-    int num_large = 3;
-    int num_small = 3;
 
-    // to select, you want to get
+void choose_numbers(int num_large, int num_small) {
 
+    int i,j,which;
+    
     for (i = 0; i < num_large; ++i) {
 	which = rand() % (4 - i);
 	__numbers__[i] = large_ones[which];
@@ -215,29 +165,75 @@ int main(int argc, char** argv) {
 	    small_ones[j] = small_ones[j+1];
 	}
     }
+}
 
-    __numbers__[0] = 100;
-    __numbers__[1] = 75;
-    __numbers__[2] = 50;
-    __numbers__[3] = 4;
-    __numbers__[4] = 1;
-    __numbers__[5] = 7;
+int main(int argc, char** argv) {
 
-    printf("\n");
-    for (i = 0; i < N; ++i)
-	printf("%4d  ", __numbers__[i]);
-    printf("\n\n");
+    int i, j;
+    __C_PAG__;
+
+    srand(time(0));
+    print_number(0,0,0);
+    printf("\033[7;0H ______________________________ \n");
+    printf("|                              |\n");
+    printf("|                              |\n");
+    printf("|______________________________|\n");
+    
+    // Ask user what they want:
+    int which, num_large, num_small;
+    LINE(15);
+    printf("Your turn to pick the numbers. [b/s]\n");
+    ask_user(&num_large, &num_small);
+    choose_numbers(num_large, num_small);
+
+    // say what we've got
+    LINE(17);
+    printf("Your numbers are...\n");
+    printf("\033[9;25H%3d", __numbers__[5]); fflush(stdout); sleep(1);
+    printf("\033[9;21H%3d", __numbers__[4]); fflush(stdout); sleep(1);
+    printf("\033[9;17H%3d", __numbers__[3]); fflush(stdout); sleep(1);
+    printf("\033[9;13H%3d", __numbers__[2]); fflush(stdout); sleep(1);
+    printf("\033[9;9H%3d",  __numbers__[1]); fflush(stdout); sleep(1);
+    printf("\033[9;5H%3d",  __numbers__[0]); fflush(stdout); sleep(1);
+
+    // now set the target
+    LINE(18);
+    printf("And your target is...\n");
+    __target__ = cecil();
+    sleep(1);
 
     // save things at the end, to avoid confusion.
     for (i = 0; i < N; ++i) {
-	is_leaf_available[i] = 1;
+	is_leaf_available[i] =  1;
 	__workspace__[i] = __numbers__[i];
 	location[i] = 0;
     }
+
+    // start the timer
+    LINE(19);
+    printf("And your time starts... "); fflush(stdout);
+    printf("Now!\n");
+    LINE(13);
+    timer(30);
+
+    LINE(20);
+    printf("What did you get?\n");
+    scanf("%s", answer);
+
+    int ans_check = calculate(answer);
+
+    if (ans_check == __target__) {
+	printf("Very good!\n");
+    } else {
+	printf("Not quite...\n"); sleep(1);
+	printf("Rachel, could it be done?\n\n");
+    }
     
-    for (i = 5; i < 6; ++i) {
+    for (i = 1; i < 6; ++i) {
     	leaf_recursion(0, i+1, 0);
     }
+    printf("\n");
+    
 
     return 0;  
   
@@ -261,8 +257,10 @@ int main(int argc, char** argv) {
 /********************************************************************/
 
 int tree_recursion(int i_branch, int num_leaf) {
-    
-  int i, j, k;
+    if (__NUM_SOL__ >= __MAX_SOL__)
+	return 0;
+
+    int i, j, k;
 
     int status;
     
@@ -285,7 +283,7 @@ int tree_recursion(int i_branch, int num_leaf) {
 
 		// make sure no one else tries to land here
 		is_leaf_available[j] = 0;
-
+		
 		// loop over different operations
 		for (k = 0; k < 4; ++k) {
 
@@ -298,8 +296,6 @@ int tree_recursion(int i_branch, int num_leaf) {
 		    __lvars__[(num_leaf-1)-i_branch-1] = which_leaves[i];
 		    __rvars__[(num_leaf-1)-i_branch-1] = which_leaves[j];
 
-		    //if (__numbers__[which_leaves[i]] < __numbers__[which_leaves[j]]) {
-
 		    __solution__[(num_leaf-1)-i_branch-1] += __OP_FLAG__;
 		    
 		    if (i_branch+1 < num_leaf-1) {
@@ -310,16 +306,12 @@ int tree_recursion(int i_branch, int num_leaf) {
 		    
 		    __solution__[(num_leaf-1)-(i_branch+1)] -= __OP_FLAG__;
 
-		    //} else {
-		    
 		    if (i_branch+1 < num_leaf-1) {
 			status = tree_recursion(i_branch+1, num_leaf);
 		    } else {
 			status = print_solution(num_leaf-1);
 		    }
 		      
-		    //}
-
 		    if (status == 0) 
 		      	break;
 		}
@@ -337,6 +329,9 @@ int tree_recursion(int i_branch, int num_leaf) {
 
 int leaf_recursion(int i_leaf, int max_leaf, int i_start) {
 
+    if (__NUM_SOL__ >= __MAX_SOL__)
+	return 0;
+    
     int i;
     
     // loop over which is the i_leaf'th variable to use
@@ -355,6 +350,11 @@ int leaf_recursion(int i_leaf, int max_leaf, int i_start) {
 	    // do the tree recursion!
 	    tree_recursion(0, max_leaf);
 	}
+
+	// check any time we've gone somewhere
+	if (__NUM_SOL__ >= __MAX_SOL__)
+	    return 0;
+
     }
     return 0;
 }
@@ -483,6 +483,7 @@ int print_solution(int n) {
     
     // display the formula
     printf("%d = %s\n", e, formula);
+    ++__NUM_SOL__;
 
     // empty out the buffer
     memset(formula, 0, BUFFER_SIZE);

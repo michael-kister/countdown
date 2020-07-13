@@ -13,10 +13,11 @@
 	__C_ROW__( #x , 6); __C_ROW__( #x , 7);		\
 	__C_ROW__( #x , 8); __C_ROW__( #x , 9); }   
     
-#define __C_PAG__ { __C_PAR__(0); __C_PAR__(1) }
+#define __C_PAG__ {		    \
+	__C_PAR__(0); __C_PAR__(1); \
+	__C_PAR__(2); __C_PAR__(3); __C_PAR__(4); }
 
 #define LINE(x) { printf("\033[" #x ";0H"); }
-
 
 
 #define _t2 0x1
@@ -83,30 +84,28 @@ void print_bot(int n) {
 void print_number(int h, int t, int o) {
 
     LINE(1);
-    printf("      ----------------  \n");
-    printf("     |  ");
+    printf("        ________________  \n");
+    printf("       |  ");
     print_top(h); printf(" ");
     print_top(t); printf(" ");
     print_top(o); printf("   |\n");
     
-    printf("     |  ");
+    printf("       |  ");
     print_mid(h); printf(" ");
     print_mid(t); printf(" ");
     print_mid(o); printf("   |\n");
     
-    printf("     |  ");
+    printf("       |  ");
     print_bot(h); printf(" ");
     print_bot(t); printf(" ");
     print_bot(o); printf("   |\n");
-    printf("     |                | \n");
-    printf("      ----------------  \n");
+    printf("       |________________| \n");
     
     
 }
 
 int cecil(void) {
     LINE(13);
-    printf("And your target is...");
     int hhh,ttt,ooo,i;
     for (i = 0; i < 20; ++i) {
 	hhh = rand() % 9 + 1;
@@ -115,5 +114,5 @@ int cecil(void) {
 	print_number(hhh,ttt,ooo);
 	usleep(100000);
     }
-    return 100*hhh + 10*tt + 1*ooo;
+    return 100*hhh + 10*ttt + 1*ooo;
 }
