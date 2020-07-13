@@ -10,39 +10,19 @@
 #include "cecil.h"
 #include "calculator.h"
 
-#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
-#define BYTE_TO_BINARY(byte)  \
-  (byte & 0x80 ? '1' : '0'), \
-  (byte & 0x40 ? '1' : '0'), \
-  (byte & 0x20 ? '1' : '0'), \
-  (byte & 0x10 ? '1' : '0'), \
-  (byte & 0x08 ? '1' : '0'), \
-  (byte & 0x04 ? '1' : '0'), \
-  (byte & 0x02 ? '1' : '0'), \
-  (byte & 0x01 ? '1' : '0')
-
-void bprint(int m) {
-    printf(BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN" "BYTE_TO_BINARY_PATTERN"\n",
-	   BYTE_TO_BINARY(m>>24), BYTE_TO_BINARY(m>>16), BYTE_TO_BINARY(m>>8), BYTE_TO_BINARY(m));
-}
-
-// number of numbers for round
+// global variables in form of macros
 #define N 6
-
 #define N0 1
 #define N1 2
 #define N2 4
 #define N3 8
 #define N4 16
 #define N5 32
-
 #define __NUM_MASK__ 63
-
 #define ADD 64
 #define SUB 128
 #define MUL 256
 #define DIV 512
-
 #define __OP_MASK__ 960
 #define __OP_FLAG__ 1024
 
@@ -56,51 +36,25 @@ int __solution__[N];
 int __lvars__[N];
 int __rvars__[N];
 int location[N];
-
 int __MAX_SOL__ = 10;
 int __NUM_SOL__ = 0;
 
 #define BUFFER_SIZE 64
-
 char formula[BUFFER_SIZE];
 char answer[BUFFER_SIZE];
 
-// prototypes for setting the numbers
-int set_numbers(void);
+int large_ones[4]  = {25, 50, 75, 100};
+int small_ones[20] = {1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10};
+int i_large[6];
+int i_small[6];
 
+
+
+// prototypes for UX
 char choices[32];
-
-int ask_user(int *num_large, int *num_small) {
-
-    int i, num_wrong = 0;
-
-    scanf("%s", choices);
-    
-    for (i = 0; i < N; ++i) {
-	if (choices[i] == 'b' || choices[i] == 'B') {
-	    ++num_large[0];
-	} else if (choices[i] == 's' || choices[i] == 'S') {
-	    ++num_small[0];
-	} else {
-	    ++num_wrong;
-	}
-    }
-
-    if (num_wrong > 0) {
-	printf("I told you to choose between 'b' and 's'.\n");
-	printf("You're getting %d extra big numbers!\n", num_wrong);
-	num_large += num_wrong;
-    }
-
-    if (num_large[0] > 4) {
-	printf("You can only have 4 big ones---so that is what you'll have.\n");
-	num_large[0] = 4;
-	num_small[0] = 2;
-    }
-
-    return 0;
-
-}
+int ask_user(int *num_large, int *num_small);
+void choose_numbers(int num_large, int num_small);
+void timer(int num_sec);
 
 // prototypes for solution
 int print_solution(int n);
@@ -113,59 +67,6 @@ int leaf_recursion(int i_leaf, int max_leaf, int i_start);
 int tree_recursion(int i_branch, int num_leaf);
 int evaluate(int num_op);
 
-
-
-int large_ones[4]  = {25, 50, 75, 100};
-int small_ones[20] = {1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10};
-
-int i_large[6];
-int i_small[6];
-
-
-void timer(int num_sec) {
-
-    int i,j;
-    
-    printf("[");
-    for (i = 0; i < num_sec; ++i)
-	printf(" ");
-    printf("]");
-    fflush(stdout);
-    for (i = 0; i < num_sec; ++i) {
-	sleep(1);
-	for (j = 0; j < num_sec-i+1; ++j)
-	    printf("\b");
-	printf("=");
-	for (j = 0; j < num_sec-i-1; ++j)
-	    printf(" ");
-	printf("]");
-	fflush(stdout);
-    }
-    printf("\n\n");
-    sleep(1);
-}
-
-
-void choose_numbers(int num_large, int num_small) {
-
-    int i,j,which;
-    
-    for (i = 0; i < num_large; ++i) {
-	which = rand() % (4 - i);
-	__numbers__[i] = large_ones[which];
-	for (j = which; j < (4 - i); ++j) {
-	    large_ones[j] = large_ones[j+1];
-	}
-    }
-
-    for (i = 0; i < num_small; ++i) {
-	which = rand() % (20 - i);
-	__numbers__[i+num_large] = small_ones[which];
-	for (j = which; j < (20 - i); ++j) {
-	    small_ones[j] = small_ones[j+1];
-	}
-    }
-}
 
 int main(int argc, char** argv) {
 
@@ -244,12 +145,81 @@ int main(int argc, char** argv) {
 /********************************************************************/
 
 
+int ask_user(int *num_large, int *num_small) {
 
+    int i, num_wrong = 0;
 
+    scanf("%s", choices);
+    
+    for (i = 0; i < N; ++i) {
+	if (choices[i] == 'b' || choices[i] == 'B') {
+	    ++num_large[0];
+	} else if (choices[i] == 's' || choices[i] == 'S') {
+	    ++num_small[0];
+	} else {
+	    ++num_wrong;
+	}
+    }
 
+    if (num_wrong > 0) {
+	printf("I told you to choose between 'b' and 's'.\n");
+	printf("You're getting %d extra big numbers!\n", num_wrong);
+	num_large += num_wrong;
+    }
 
+    if (num_large[0] > 4) {
+	printf("You can only have 4 big ones---so that is what you'll have.\n");
+	num_large[0] = 4;
+	num_small[0] = 2;
+    }
 
+    return 0;
 
+}
+
+void choose_numbers(int num_large, int num_small) {
+
+    int i,j,which;
+    
+    for (i = 0; i < num_large; ++i) {
+	which = rand() % (4 - i);
+	__numbers__[i] = large_ones[which];
+	for (j = which; j < (4 - i); ++j) {
+	    large_ones[j] = large_ones[j+1];
+	}
+    }
+
+    for (i = 0; i < num_small; ++i) {
+	which = rand() % (20 - i);
+	__numbers__[i+num_large] = small_ones[which];
+	for (j = which; j < (20 - i); ++j) {
+	    small_ones[j] = small_ones[j+1];
+	}
+    }
+}
+
+void timer(int num_sec) {
+
+    int i,j;
+    
+    printf("[");
+    for (i = 0; i < num_sec; ++i)
+	printf(" ");
+    printf("]");
+    fflush(stdout);
+    for (i = 0; i < num_sec; ++i) {
+	sleep(1);
+	for (j = 0; j < num_sec-i+1; ++j)
+	    printf("\b");
+	printf("=");
+	for (j = 0; j < num_sec-i-1; ++j)
+	    printf(" ");
+	printf("]");
+	fflush(stdout);
+    }
+    printf("\n\n");
+    sleep(1);
+}
 
 
 /********************************************************************/
